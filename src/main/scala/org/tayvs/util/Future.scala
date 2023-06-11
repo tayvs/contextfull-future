@@ -7,6 +7,7 @@ import scala.reflect.ClassTag
 import scala.util.control.{NoStackTrace, NonFatal}
 import scala.util.{Failure, Success, Try}
 
+// Basically it is delegator
 trait Future[T] extends ClassicFuture[T] {
 
   override def foreach[U](f: T => U)(implicit executor: ExecutionContext): Unit = super.foreach(f)

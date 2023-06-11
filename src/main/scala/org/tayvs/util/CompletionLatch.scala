@@ -626,7 +626,7 @@ object Promise {
           }
         //        ContextHolder.contextHolder.remove()
         newCopy.clean
-        println(s"[Future.run][xform:${_xform}] new copy is ${newCopy}")
+        println(s"[Future.run][xform:${_xform}][${Thread.currentThread().getName}] new copy is ${newCopy}")
         if (resolvedResult ne null)
           tryComplete0(get(), resolvedResult.asInstanceOf[Try[T]], newCopy) // T is erased anyway so we won't have any use for it above
       } catch {

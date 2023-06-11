@@ -23,13 +23,13 @@ class ContextHolder(private var initContext: Map[String, Any]) {
 
 object ContextHolder {
 
-  def apply(): ContextHolder = empty
+  def apply(): ContextHolder = new ContextHolder(Map.empty)
 
-  val empty = new ContextHolder(Map.empty)
+//  def empty = new ContextHolder(Map.empty)
 
   private[util] val contextHolder = new ThreadLocal[ContextHolder]()
 
-  def readContext: ContextHolder = contextHolder.get()
+  private[util] def readContext: ContextHolder = Option(contextHolder.get()).getOrElse(ContextHolder())
 
   def getContext: Map[String, Any] = contextHolder.get().getContext
 

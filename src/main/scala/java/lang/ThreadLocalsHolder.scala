@@ -10,7 +10,13 @@ class ThreadLocalsHolder private(state: ThreadLocal.ThreadLocalMap) {
 }
 
 object ThreadLocalsHolder {
-  def apply(): ThreadLocalsHolder = new ThreadLocalsHolder(Thread.currentThread().threadLocals)
+
+  def getThreadLocalMap(t: Thread) = {
+    val clazz = t.getClass
+    clazz.getDeclaredFields.foreach(println(_))
+  }
+
+  def apply(): ThreadLocalsHolder = new ThreadLocalsHolder(/*ThreadLocal.getMap(Thread.currentThread()) */Thread.currentThread().threadLocals)
 
   def apply[T](threadLocal: ThreadLocal[T], value: T) = new ThreadLocalsHolder(new ThreadLocal.ThreadLocalMap(threadLocal, value))
 }
