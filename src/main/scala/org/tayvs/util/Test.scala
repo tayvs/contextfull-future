@@ -5,7 +5,7 @@ import scala.util.Success
 
 object Test extends App {
 
-//  val myMapThreadLocal = new ThreadLocal[Map[String, String]]
+  val myMapThreadLocal = new ThreadLocal[Map[String, String]]
 
   def assert(b: Boolean) = {
     if (!b) {
@@ -85,7 +85,7 @@ object Test extends App {
 
 //   setName("3")
 
-   new Promise.DefaultPromise(Success(4242), new ContextHolder(Map("cake" -> "is a lie")))
+   new Promise.DefaultPromise(Success(4242)/*, new ContextHolder(Map("cake" -> "is a lie"))*/)
      .flatMap { _ =>
        assert(ContextHolder.getContext == Map("cake" -> "is a lie"))
        //      Thread.sleep(10)

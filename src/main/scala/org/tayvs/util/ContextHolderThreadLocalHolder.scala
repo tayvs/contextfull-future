@@ -1,5 +1,7 @@
 package org.tayvs.util
 
+import org.tayvs.java.ThreadLocalsHolder
+
 //class ContextHolder(private var initContext: Map[String, Any]) {
 class ContextHolderThreadLocalHolder(private var initContext: ThreadLocalsHolder) {
 
@@ -19,6 +21,8 @@ class ContextHolderThreadLocalHolder(private var initContext: ThreadLocalsHolder
 }
 
 object ContextHolderThreadLocalHolder {
+
+  def readContext = apply()
 
   //Extract all ThreadLocals for further propagating through Future
   // TODO: is it really safe? What about branching?? Looks like we just passing one instance of ThreadLocals

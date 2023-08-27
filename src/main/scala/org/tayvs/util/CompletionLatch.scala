@@ -141,25 +141,25 @@ object Promise {
     }
 
   // Left non-final to enable addition of extra fields by Java/Scala converters in scala-java8-compat.
-  class DefaultPromise[T] private[this](initial: AnyRef, context: ContextHolder)
+  class DefaultPromise[T] private[this](initial: AnyRef, context: ContextHolderThreadLocalHolder)
     extends AtomicReference[AnyRef](initial)
       with scala.concurrent.Promise[T]
       with Future[T]
       with (Try[T] => Unit) {
 
-    protected val atomicContext = new AtomicReference[ContextHolder](context)
+    protected val atomicContext = new AtomicReference[ContextHolderThreadLocalHolder](context)
 
     /**
      * Constructs a new, completed, Promise.
      */
-    final def this(result: Try[T]) = this(resolve(result): AnyRef, ContextHolder.readContext)
+    final def this(result: Try[T]) = this(resolve(result): AnyRef, ContextHolderThreadLocalHolder.readContext)
 
-    final def this(result: Try[T], context: ContextHolder) = this(resolve(result): AnyRef, context)
+    final def this(result: Try[T], context: ContextHolderThreadLocalHolder) = this(resolve(result): AnyRef, context)
 
     /**
      * Constructs a new, un-completed, Promise.
      */
-    final def this() = this(Noop: AnyRef, ContextHolder())
+    final def this() = this(Noop: AnyRef, ContextHolderThreadLocalHolder())
 
     /**
      * WARNING: the `resolved` value needs to have been pre-resolved using `resolve()`
@@ -345,14 +345,14 @@ object Promise {
       val state = get()
       if (state.isInstanceOf[Try[_]]) false
       // TODO: Context should be new or current?
-      else tryComplete0(state, resolve(value), ContextHolder())
+      else tryComplete0(state, resolve(value), ContextHolderThreadLocalHolder())
     }
 
     @tailrec // WARNING: important that the supplied Try really is resolve():d
     final private[Promise] def tryComplete0(
                                              state: AnyRef,
                                              resolved: Try[T],
-                                             context: ContextHolder
+                                             context: ContextHolderThreadLocalHolder
                                            ): Boolean =
       if (state.isInstanceOf[Callbacks[_]]) {
         if (compareAndSet(state, resolved)) {
@@ -385,7 +385,7 @@ object Promise {
     @tailrec final private def dispatchOrAddCallbacks[C <: Callbacks[T]](
                                                                           state: AnyRef,
                                                                           callbacks: C,
-                                                                          context: ContextHolder
+                                                                          context: ContextHolderThreadLocalHolder
                                                                         ): C =
       if (state.isInstanceOf[Try[_]]) {
         submitWithValue(callbacks, state.asInstanceOf[Try[T]], context) // invariant: callbacks should never be Noop here
@@ -416,7 +416,7 @@ object Promise {
     final private[this] def submitWithValue(
                                              callbacks: Callbacks[T],
                                              resolved: Try[T],
-                                             context: ContextHolder
+                                             context: ContextHolderThreadLocalHolder
                                            ): Unit =
       if (callbacks.isInstanceOf[ManyCallbacks[T]]) {
         val m: ManyCallbacks[T] = callbacks.asInstanceOf[ManyCallbacks[T]]
@@ -510,7 +510,7 @@ object Promise {
                                                    final private[this] var _ec: ExecutionContext,
                                                    final private[this] var _arg: Try[F],
                                                    final private[this] val _xform: Int,
-                                                   final private[this] var _context: ContextHolder
+                                                   final private[this] var _context: ContextHolderThreadLocalHolder
                                                  ) extends DefaultPromise[T]()
     with Callbacks[F]
     with Runnable
@@ -528,7 +528,7 @@ object Promise {
     // submitWithValue *happens-before* run(), through ExecutionContext.execute.
     // Invariant: _arg is `null`, _ec is non-null. `this` ne Noop.
     // requireNonNull(resolved) will hold as guarded by `resolve`
-    final def submitWithValue(resolved: Try[F], context: ContextHolder): this.type = {
+    final def submitWithValue(resolved: Try[F], context: ContextHolderThreadLocalHolder): this.type = {
       _arg = resolved
       _context = context
       val e = _ec
@@ -548,7 +548,7 @@ object Promise {
     final private[this] def handleFailure(
                                            t: Throwable,
                                            e: ExecutionContext,
-                                           c: ContextHolder
+                                           c: ContextHolderThreadLocalHolder
                                          ): Unit = {
       val wasInterrupted = t.isInstanceOf[InterruptedException]
       if (wasInterrupted || NonFatal(t)) {
@@ -571,7 +571,7 @@ object Promise {
       _arg = null // see above
       _ec = null // see above
       _context = null
-      //      ContextHolder.contextHolder.set(newCopy)
+      //      ContextHolderThreadLocalHolder.ContextHolderThreadLocalHolder.set(newCopy)
       newCopy.inject
       atomicContext.set(newCopy)
       try {
@@ -624,7 +624,7 @@ object Promise {
                 new IllegalStateException("BUG: encountered transformation promise with illegal type: " + _xform)
               ) // Safe not to `resolve`
           }
-        //        ContextHolder.contextHolder.remove()
+        //        ContextHolderThreadLocalHolder.ContextHolderThreadLocalHolder.remove()
         newCopy.clean
         println(s"[Future.run][xform:${_xform}][${Thread.currentThread().getName}] new copy is ${newCopy}")
         if (resolvedResult ne null)
