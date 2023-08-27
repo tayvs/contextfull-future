@@ -1,5 +1,4 @@
 import java.util.concurrent.Executors
-//package java.lang
 
 object ThreadLocalMapExtractor extends App {
 
@@ -18,13 +17,38 @@ object ThreadLocalMapExtractor extends App {
 //  println(threadLocalClazz.getDeclaredMethods.mkString(", "))
   val createInheritedMapMethod = threadLocalClazz.getDeclaredConstructor(threadLocalClazz)
   createInheritedMapMethod.setAccessible(true)
+  val createWithFirstElementMapMethod = threadLocalClazz.getDeclaredConstructor(Class.forName("java.lang.ThreadLocal"), classOf[Object])
+  createWithFirstElementMapMethod.setAccessible(true)
+  println(threadLocalClazz.getDeclaredMethods.filter(_.getName == "set").mkString(", "))
+  val setThreadLocalMapMethod = threadLocalClazz.getDeclaredMethod("set", Class.forName("java.lang.ThreadLocal"), classOf[Object])
+
+  val getTableThreadMapMethod = threadLocalClazz.getDeclaredField("table")
+  getTableThreadMapMethod.setAccessible(true)
+
+  val entityClazz = Class.forName("java.lang.ThreadLocal$ThreadLocalMap$Entry")
+  println(entityClazz.getMethods.mkString(", "))
+  println(entityClazz.getMethods.filter(_.getName == "get").mkString(", "))
+  val entityKetMethod = entityClazz.getMethod("get")
+  entityKetMethod.setAccessible(true)
+  val entityValueMethod = entityClazz.getDeclaredField("value")
+  entityValueMethod.setAccessible(true)
 
   // TODO: reimplement copy. Right now InheritableThreadLocal used for test porpuses
   def copyThreadLocalMap(tlm: Object) = {
     if (tlm == null) tlm
     else {
-      val copy = createInheritedMapMethod.newInstance(tlm)
+      val entityArr = getTableThreadMapMethod.get(tlm).asInstanceOf[Array[_]]
+      val notNullEntities = entityArr.filter(_ != null)
+      val tlmCopy = if (notNullEntities.nonEmpty) {
+        val head = notNullEntities.head
+        val tail = notNullEntities.tail
+        val newInstance = createWithFirstElementMapMethod.newInstance(entityKetMethod.invoke(head), entityValueMethod.get(head))
+        tail.foreach(entry => setThreadLocalMapMethod.invoke(newInstance, entityKetMethod.invoke(entry), entityValueMethod.get(entry)))
+        newInstance
+      } else null
+//      val copy = createInheritedMapMethod.newInstance(tlm)
       println(s"tlm copy $tlm")
+      tlmCopy
     }
   }
 
@@ -95,26 +119,38 @@ object ThreadLocalMapExtractor extends App {
 
   println(e1.submit(() => getS).get())
   println(e2.submit(() => getS).get())
+  println("### both should be nulls")
+
+  ////////////////////////////////
 
   e1.submit((() => setS("ssss")) : Runnable).get
 
   println(e1.submit(() => getS).get())
   println(e2.submit(() => getS).get())
+  println("### first ssss second null")
+
+  //////////////////////////////////
 
   reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
 
   println(e1.submit(() => getS).get())
   println(e2.submit(() => getS).get())
+  println("### first ssss second ssss")
+
+  /////////////////////////////////
 
   e1.submit((() => setS("wwwww")): Runnable).get
 
   println(e1.submit(() => getS).get())
   println(e2.submit(() => getS).get())
+  println("### first wwww second ssss")
 
   reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
 
   println(e1.submit(() => getS).get())
   println(e2.submit(() => getS).get())
+
+  println("### first wwww second wwww")
 
   e1.shutdown()
   e2.shutdown()
