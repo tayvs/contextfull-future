@@ -2,9 +2,9 @@ package org.tayvs.java
 
 import java.util.concurrent.Executors
 
-object ThreadLocalMapExtractor /*extends App*/ {
+object ThreadLocalMapExtractor extends App {
 
-  class ThreadLocalMapWrapper private(threadLocalMap: Object) {
+  class ThreadLocalMapWrapper private(val threadLocalMap: Object) extends AnyVal {
     import ThreadLocalMapWrapper._
 
     def set(key: AnyRef, value: AnyRef) = {
@@ -22,34 +22,37 @@ object ThreadLocalMapExtractor /*extends App*/ {
   object ThreadLocalMapWrapper {
 
     // TODO types for parameters
-    def apply(key: AnyRef, value: AnyRef): ThreadLocalMapWrapper = {
+    @inline def apply(key: AnyRef, value: AnyRef): ThreadLocalMapWrapper = {
       new ThreadLocalMapWrapper(createWithFirstElementMapMethod.newInstance(key, value).asInstanceOf[Object])
     }
 
-    def apply(entryWrapper: EntryWrapper): ThreadLocalMapWrapper = ThreadLocalMapWrapper(entryWrapper.key, entryWrapper.value)
+    @inline def apply(entryWrapper: EntryWrapper): ThreadLocalMapWrapper = ThreadLocalMapWrapper(entryWrapper.key, entryWrapper.value)
 
-    val threadLocalClazz = Class.forName("java.lang.ThreadLocal")
+
+//    val threadLocalClazz = Class.forName("java.lang.ThreadLocal")
+    val threadLocalClazz = classOf[ThreadLocal[_]]
+    val objectClazz = classOf[Object]
     val threadLocalMapClazz = Class.forName("java.lang.ThreadLocal$ThreadLocalMap")
     val createInheritedMapMethod = threadLocalMapClazz.getDeclaredConstructor(threadLocalMapClazz)
     createInheritedMapMethod.setAccessible(true)
-    val createWithFirstElementMapMethod = threadLocalMapClazz.getDeclaredConstructor(threadLocalClazz, classOf[Object])
+    val createWithFirstElementMapMethod = threadLocalMapClazz.getDeclaredConstructor(threadLocalClazz, objectClazz)
     createWithFirstElementMapMethod.setAccessible(true)
-    println(threadLocalMapClazz.getDeclaredMethods.filter(_.getName == "set").mkString(", "))
-    val setThreadLocalMapMethod = threadLocalMapClazz.getDeclaredMethod("set", threadLocalClazz, classOf[Object])
+//    println(threadLocalMapClazz.getDeclaredMethods.filter(_.getName == "set").mkString(", "))
+    val setThreadLocalMapMethod = threadLocalMapClazz.getDeclaredMethod("set", threadLocalClazz, objectClazz)
     setThreadLocalMapMethod.setAccessible(true)
 
     val getTableThreadMapMethod = threadLocalMapClazz.getDeclaredField("table")
     getTableThreadMapMethod.setAccessible(true)
   }
 
-  class EntryWrapper(entry: Any) {
+  class EntryWrapper(val entry: Any) extends AnyVal {
     import EntryWrapper._
     def key = entityKeyMethod.invoke(entry)
     def value = entityValueMethod.get(entry)
   }
 
   object EntryWrapper {
-    def apply(entry: Any) = new EntryWrapper(entry)
+//    def apply(entry: Any) = new EntryWrapper(entry)
 
     val entityClazz = Class.forName("java.lang.ThreadLocal$ThreadLocalMap$Entry")
     //    println(entityClazz.getMethods.mkString(", "))
@@ -66,7 +69,7 @@ object ThreadLocalMapExtractor /*extends App*/ {
   val threadClazz = classOf[Thread]
   val threadLocalsField = threadClazz.getDeclaredField("threadLocals")
   threadLocalsField.setAccessible(true)
-  println(threadLocalsField)
+//  println(threadLocalsField)
 
   //  clazz.getDeclaredFields.foreach(println(_))
 
@@ -92,6 +95,7 @@ object ThreadLocalMapExtractor /*extends App*/ {
 
   // TODO: reimplement copy. Right now InheritableThreadLocal used for test porpuses
   def copyThreadLocalMap(tlm: Object): Object = {
+    val start = System.nanoTime()
     if (tlm == null) tlm
     else {
       val entityArr = getTableThreadMapMethod.get(tlm).asInstanceOf[Array[_]]
@@ -106,7 +110,9 @@ object ThreadLocalMapExtractor /*extends App*/ {
         newInstance.value
       } // else null
       //      val copy = createInheritedMapMethod.newInstance(tlm)
+      val end = System.nanoTime()
       println(s"tlm copy $tlm")
+      println(s"copyThreadLocalMap takes " + (end - start))
       tlmCopy
     }
   }
@@ -137,7 +143,9 @@ object ThreadLocalMapExtractor /*extends App*/ {
     val start = System.nanoTime()
     //    val startNano = System.nanoTime()
     //TODO: need to make copy, otherwise they share same link and updating values in one thread automativally change value in another
-    threadLocalsField.set(to, copyThreadLocalMap(threadLocalsField.get(from)))
+    val tlmToCopy =    threadLocalsField.get(from)
+    val tlmCopy = time(copyThreadLocalMap(tlmToCopy), t => s"ThreadLocalMap copy outside takes $t ns")
+    threadLocalsField.set(to, tlmToCopy)
     val end = System.nanoTime()
 
     println(s"threadLocalMap reassigning takes ${end - start} ns")
@@ -160,50 +168,70 @@ object ThreadLocalMapExtractor /*extends App*/ {
 
   def setS(str: String): Unit = s.set(str)
 
-//  val e1 = Executors.newSingleThreadExecutor()
-//  val e2 = Executors.newSingleThreadExecutor()
-//
-//  //  e1.submit()
-//  //
-//  val t1 = new ThreadWithS
-//  val t2 = new ThreadWithS
-//
-//  println(e1.submit(() => getS).get())
-//  println(e2.submit(() => getS).get())
-//  println("### both should be nulls")
-//
-//  ////////////////////////////////
-//
-//  e1.submit((() => setS("ssss")) : Runnable).get
-//
-//  println(e1.submit(() => getS).get())
-//  println(e2.submit(() => getS).get())
-//  println("### first ssss second null")
-//
-//  //////////////////////////////////
-//
-//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-//
-//  println(e1.submit(() => getS).get())
-//  println(e2.submit(() => getS).get())
-//  println("### first ssss second ssss")
-//
-//  /////////////////////////////////
-//
-//  e1.submit((() => setS("wwwww")): Runnable).get
-//
-//  println(e1.submit(() => getS).get())
-//  println(e2.submit(() => getS).get())
-//  println("### first wwww second ssss")
-//
-//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-//
-//  println(e1.submit(() => getS).get())
-//  println(e2.submit(() => getS).get())
-//
-//  println("### first wwww second wwww")
-//
-//  e1.shutdown()
-//  e2.shutdown()
+
+  time(classOf[ThreadLocal[_]], t => s"ThreadLocal classOf takes $t")
+  time(Class.forName("java.lang.ThreadLocal"), t => s"ThreadLocal classForName takes $t")
+
+  val e1 = Executors.newSingleThreadExecutor()
+  val e2 = Executors.newSingleThreadExecutor()
+
+  //  e1.submit()
+  //
+  val t1 = new ThreadWithS
+  val t2 = new ThreadWithS
+
+  println(e1.submit(() => getS).get())
+  println(e2.submit(() => getS).get())
+  println("### both should be nulls")
+
+  ////////////////////////////////
+
+  e1.submit((() => setS("ssss")) : Runnable).get
+
+  println(e1.submit(() => getS).get())
+  println(e2.submit(() => getS).get())
+  println("### first ssss second null")
+
+  //////////////////////////////////
+
+  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+
+  println(e1.submit(() => getS).get())
+  println(e2.submit(() => getS).get())
+  println("### first ssss second ssss")
+
+  /////////////////////////////////
+
+  e1.submit((() => setS("wwwww")): Runnable).get
+
+  println(e1.submit(() => getS).get())
+  println(e2.submit(() => getS).get())
+  println("### first wwww second ssss")
+
+  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+
+  println(e1.submit(() => getS).get())
+  println(e2.submit(() => getS).get())
+
+  println("### first wwww second wwww")
+
+  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+
+  e1.shutdown()
+  e2.shutdown()
+
+  def time(f: => Any, logMsg: Long => String) = {
+    val start = System.nanoTime()
+    val fRes = f
+    val end = System.nanoTime()
+    println(logMsg(end - start))
+    fRes
+  }
+
+  (1 to 10).foreach(_ => time(println("someString"), t => s"'someString' println takes $t"))
+  (1 to 10).foreach(_ => time(println(s"someString ${42 - 2}"), t => s"'someString' println with string interpolation takes $t"))
 
 }
