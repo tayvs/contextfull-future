@@ -29,7 +29,6 @@ object ThreadLocalMapExtractor /*extends App*/ {
     @inline def apply(entryWrapper: EntryWrapper): ThreadLocalMapWrapper = ThreadLocalMapWrapper(entryWrapper.key, entryWrapper.value)
 
 
-//    val threadLocalClazz = Class.forName("java.lang.ThreadLocal")
     val threadLocalClazz = classOf[ThreadLocal[_]]
     val objectClazz = classOf[Object]
     val threadLocalMapClazz = Class.forName("java.lang.ThreadLocal$ThreadLocalMap")
@@ -37,7 +36,6 @@ object ThreadLocalMapExtractor /*extends App*/ {
     createInheritedMapMethod.setAccessible(true)
     val createWithFirstElementMapMethod = threadLocalMapClazz.getDeclaredConstructor(threadLocalClazz, objectClazz)
     createWithFirstElementMapMethod.setAccessible(true)
-//    println(threadLocalMapClazz.getDeclaredMethods.filter(_.getName == "set").mkString(", "))
     val setThreadLocalMapMethod = threadLocalMapClazz.getDeclaredMethod("set", threadLocalClazz, objectClazz)
     setThreadLocalMapMethod.setAccessible(true)
 
@@ -52,11 +50,8 @@ object ThreadLocalMapExtractor /*extends App*/ {
   }
 
   object EntryWrapper {
-//    def apply(entry: Any) = new EntryWrapper(entry)
 
     val entityClazz = Class.forName("java.lang.ThreadLocal$ThreadLocalMap$Entry")
-    //    println(entityClazz.getMethods.mkString(", "))
-    //    println(entityClazz.getMethods.filter(_.getName == "get").mkString(", "))
     val entityKeyMethod = entityClazz.getMethod("get")
     entityKeyMethod.setAccessible(true)
     val entityValueMethod = entityClazz.getDeclaredField("value")
@@ -69,29 +64,11 @@ object ThreadLocalMapExtractor /*extends App*/ {
   val threadClazz = classOf[Thread]
   val threadLocalsField = threadClazz.getDeclaredField("threadLocals")
   threadLocalsField.setAccessible(true)
-//  println(threadLocalsField)
 
-  //  clazz.getDeclaredFields.foreach(println(_))
 
   val threadLocalClazz = Class.forName("java.lang.ThreadLocal$ThreadLocalMap")
-  ////  println(threadLocalClazz.getDeclaredMethods.mkString(", "))
-  //  val createInheritedMapMethod = threadLocalClazz.getDeclaredConstructor(threadLocalClazz)
-  //  createInheritedMapMethod.setAccessible(true)
-  //  val createWithFirstElementMapMethod = threadLocalClazz.getDeclaredConstructor(Class.forName("java.lang.ThreadLocal"), classOf[Object])
-  //  createWithFirstElementMapMethod.setAccessible(true)
-  //  println(threadLocalClazz.getDeclaredMethods.filter(_.getName == "set").mkString(", "))
-  //  val setThreadLocalMapMethod = threadLocalClazz.getDeclaredMethod("set", Class.forName("java.lang.ThreadLocal"), classOf[Object])
-  //
   val getTableThreadMapMethod = threadLocalClazz.getDeclaredField("table")
   getTableThreadMapMethod.setAccessible(true)
-
-  //  val entityClazz = Class.forName("java.lang.ThreadLocal$ThreadLocalMap$Entry")
-  //  println(entityClazz.getMethods.mkString(", "))
-  //  println(entityClazz.getMethods.filter(_.getName == "get").mkString(", "))
-  //  val entityKetMethod = entityClazz.getMethod("get")
-  //  entityKetMethod.setAccessible(true)
-  //  val entityValueMethod = entityClazz.getDeclaredField("value")
-  //  entityValueMethod.setAccessible(true)
 
   // TODO: reimplement copy. Right now InheritableThreadLocal used for test porpuses
   def copyThreadLocalMap(tlm: Object): Object = {
@@ -111,35 +88,12 @@ object ThreadLocalMapExtractor /*extends App*/ {
       } // else null
       //      val copy = createInheritedMapMethod.newInstance(tlm)
       val end = System.nanoTime()
-      println(s"tlm copy $tlm")
-      println(s"copyThreadLocalMap takes " + (end - start))
+      println(s"copyThreadLocalMap that is $tlm takes " + (end - start))
       tlmCopy
     }
   }
 
-  def getThreadLocalsField(t: Thread) = {
-    val clazz = t.getClass
-    //    clazz.getDeclaredFields.foreach(println(_))
-    //    println("#" * 50)
-    //    println(clazz.getDeclaredField("threadLocals"))
-    val f = clazz.getDeclaredField("threadLocals")
-    f.setAccessible(true)
-    println(f)
-    f
-  }
-
   def reassignThreadLocals(from: Thread, to: Thread) = {
-    //    val clazz = from.getClass
-    //    clazz.getDeclaredFields.foreach(println(_))
-    //    println("#" * 50)
-    //    println(clazz.getDeclaredField("threadLocals"))
-    //    val f = clazz.getDeclaredField("threadLocals")
-    //    f.setAccessible(true)
-    //    val threadLocals = f.get(from)
-    //    println(threadLocals)
-    //    val fromTLField = getThreadLocalsField(from)
-    //    val toTLField = getThreadLocalsField(to)
-
     val start = System.nanoTime()
     //    val startNano = System.nanoTime()
     //TODO: need to make copy, otherwise they share same link and updating values in one thread automativally change value in another
@@ -151,9 +105,6 @@ object ThreadLocalMapExtractor /*extends App*/ {
     println(s"threadLocalMap reassigning takes ${end - start} ns")
     //    println(f.get(t).asInstanceOf[ThreadLocals])
   }
-
-  //  getThreadLocalMap(Thread.currentThread())
-  //  println(java.lang.ThreadLocalsHolder.getThreadLocalMap(Thread.currentThread()))
 
   def getThreadLocalMap(from: Thread): Object = copyThreadLocalMap(threadLocalsField.get(from))
 
