@@ -88,7 +88,7 @@ object ThreadLocalMapExtractor /*extends App*/ {
       } // else null
       //      val copy = createInheritedMapMethod.newInstance(tlm)
       val end = System.nanoTime()
-      println(s"copyThreadLocalMap that is $tlm takes " + (end - start))
+      println(s"copyThreadLocalMap that is $tlm takes ${end - start} ns")
       tlmCopy
     }
   }
@@ -103,7 +103,6 @@ object ThreadLocalMapExtractor /*extends App*/ {
     val end = System.nanoTime()
 
     println(s"threadLocalMap reassigning takes ${end - start} ns")
-    //    println(f.get(t).asInstanceOf[ThreadLocals])
   }
 
   def getThreadLocalMap(from: Thread): Object = copyThreadLocalMap(threadLocalsField.get(from))
