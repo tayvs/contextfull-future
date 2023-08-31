@@ -17,6 +17,10 @@ object Boot extends App {
 
   println("test started")
 
+  println()
+  println("Test1")
+  println()
+
   Future
     .successful(42)
     .map { _ =>
@@ -38,6 +42,10 @@ object Boot extends App {
     }
 
   Thread.sleep(100)
+
+  println()
+  println("Test2")
+  println()
 
   val counter = new ThreadLocal[Int]
 
@@ -89,6 +97,10 @@ object Boot extends App {
   promise.success(42)
   Thread.sleep(100)
 
+  println()
+  println("Test3")
+  println()
+
   val counter2 = new ThreadLocal[Int]
   val ec1 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
   val ec2 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
@@ -96,7 +108,7 @@ object Boot extends App {
   val ec4 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
 
   Future
-    .successful(42)
+    .successful(Seq(42))
     .map { _ =>
       counter2.set(counter2.get() + 1)
       println(s"state setup to 1")
@@ -120,6 +132,8 @@ object Boot extends App {
   Thread.sleep(2_000)
 
   println("test finished")
+
+  System.exit(0)
 
 //  org.tayvs.util.Promise.fromTry()
 }
