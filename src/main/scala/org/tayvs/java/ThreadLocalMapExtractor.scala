@@ -2,7 +2,7 @@ package org.tayvs.java
 
 import java.util.concurrent.Executors
 
-object ThreadLocalMapExtractor extends App {
+object ThreadLocalMapExtractor /*extends App*/ {
 
   class ThreadLocalMapWrapper private(val threadLocalMap: Object) extends AnyVal {
     import ThreadLocalMapWrapper._
@@ -143,9 +143,9 @@ object ThreadLocalMapExtractor extends App {
     val start = System.nanoTime()
     //    val startNano = System.nanoTime()
     //TODO: need to make copy, otherwise they share same link and updating values in one thread automativally change value in another
-    val tlmToCopy =    threadLocalsField.get(from)
+    val tlmToCopy = threadLocalsField.get(from)
     val tlmCopy = time(copyThreadLocalMap(tlmToCopy), t => s"ThreadLocalMap copy outside takes $t ns")
-    threadLocalsField.set(to, tlmToCopy)
+    threadLocalsField.set(to, tlmCopy)
     val end = System.nanoTime()
 
     println(s"threadLocalMap reassigning takes ${end - start} ns")
@@ -159,70 +159,70 @@ object ThreadLocalMapExtractor extends App {
 
   def assignThreadLocalMap(to: Thread, tlm: Any): Unit = threadLocalsField.set(to, tlm)
 
-  class ThreadWithS extends Thread {
-    def getS = s.get()
-    def setS(str: String) = s.set(str)
-  }
-
-  def getS = s.get()
-
-  def setS(str: String): Unit = s.set(str)
-
-
-  time(classOf[ThreadLocal[_]], t => s"ThreadLocal classOf takes $t")
-  time(Class.forName("java.lang.ThreadLocal"), t => s"ThreadLocal classForName takes $t")
-
-  val e1 = Executors.newSingleThreadExecutor()
-  val e2 = Executors.newSingleThreadExecutor()
-
-  //  e1.submit()
-  //
-  val t1 = new ThreadWithS
-  val t2 = new ThreadWithS
-
-  println(e1.submit(() => getS).get())
-  println(e2.submit(() => getS).get())
-  println("### both should be nulls")
-
-  ////////////////////////////////
-
-  e1.submit((() => setS("ssss")) : Runnable).get
-
-  println(e1.submit(() => getS).get())
-  println(e2.submit(() => getS).get())
-  println("### first ssss second null")
-
-  //////////////////////////////////
-
-  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-
-  println(e1.submit(() => getS).get())
-  println(e2.submit(() => getS).get())
-  println("### first ssss second ssss")
-
-  /////////////////////////////////
-
-  e1.submit((() => setS("wwwww")): Runnable).get
-
-  println(e1.submit(() => getS).get())
-  println(e2.submit(() => getS).get())
-  println("### first wwww second ssss")
-
-  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-
-  println(e1.submit(() => getS).get())
-  println(e2.submit(() => getS).get())
-
-  println("### first wwww second wwww")
-
-  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
-
-  e1.shutdown()
-  e2.shutdown()
-
+//  class ThreadWithS extends Thread {
+//    def getS = s.get()
+//    def setS(str: String) = s.set(str)
+//  }
+//
+//  def getS = s.get()
+//
+//  def setS(str: String): Unit = s.set(str)
+//
+//
+//  time(classOf[ThreadLocal[_]], t => s"ThreadLocal classOf takes $t")
+//  time(Class.forName("java.lang.ThreadLocal"), t => s"ThreadLocal classForName takes $t")
+//
+//  val e1 = Executors.newSingleThreadExecutor()
+//  val e2 = Executors.newSingleThreadExecutor()
+//
+//  //  e1.submit()
+//  //
+//  val t1 = new ThreadWithS
+//  val t2 = new ThreadWithS
+//
+//  println(e1.submit(() => getS).get())
+//  println(e2.submit(() => getS).get())
+//  println("### both should be nulls")
+//
+//  ////////////////////////////////
+//
+//  e1.submit((() => setS("ssss")) : Runnable).get
+//
+//  println(e1.submit(() => getS).get())
+//  println(e2.submit(() => getS).get())
+//  println("### first ssss second null")
+//
+//  //////////////////////////////////
+//
+//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+//
+//  println(e1.submit(() => getS).get())
+//  println(e2.submit(() => getS).get())
+//  println("### first ssss second ssss")
+//
+//  /////////////////////////////////
+//
+//  e1.submit((() => setS("wwwww")): Runnable).get
+//
+//  println(e1.submit(() => getS).get())
+//  println(e2.submit(() => getS).get())
+//  println("### first wwww second ssss")
+//
+//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+//
+//  println(e1.submit(() => getS).get())
+//  println(e2.submit(() => getS).get())
+//
+//  println("### first wwww second wwww")
+//
+//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+//  reassignThreadLocals(e1.submit(() => Thread.currentThread()).get, e2.submit(() => Thread.currentThread()).get)
+//
+//  e1.shutdown()
+//  e2.shutdown()
+//
   def time(f: => Any, logMsg: Long => String) = {
     val start = System.nanoTime()
     val fRes = f
@@ -230,8 +230,8 @@ object ThreadLocalMapExtractor extends App {
     println(logMsg(end - start))
     fRes
   }
-
-  (1 to 10).foreach(_ => time(println("someString"), t => s"'someString' println takes $t"))
-  (1 to 10).foreach(_ => time(println(s"someString ${42 - 2}"), t => s"'someString' println with string interpolation takes $t"))
+//
+//  (1 to 10).foreach(_ => time(println("someString"), t => s"'someString' println takes $t"))
+//  (1 to 10).foreach(_ => time(println(s"someString ${42 - 2}"), t => s"'someString' println with string interpolation takes $t"))
 
 }

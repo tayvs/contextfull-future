@@ -1,15 +1,16 @@
 
+import java.util.concurrent.Executors
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object Boot extends App {
 
   val myMapThreadLocal = new ThreadLocal[Map[String, String]]
 
-  def assert(b: Boolean) = {
+  def assert(b: Boolean, msg: String = "") = {
     if (!b) {
-      println("assertion failed")
+      println(s"assertion failed, ${msg}")
       throw new Exception("Assertion failed")
     }
   }
@@ -36,8 +37,89 @@ object Boot extends App {
       println(s"state is ${myMapThreadLocal.get()}")
     }
 
+  Thread.sleep(100)
 
-  Thread.sleep(5_000)
+  val counter = new ThreadLocal[Int]
+
+  val promise = Promise[Int]()
+  val future = promise.future.map(_ => counter.set(0))
+
+  future
+    .map { _ =>
+      counter.set(counter.get() + 1)
+      println(s"[f1] state setup to 1")
+    }
+    .map { _ =>
+      assert(counter.get() == 1, "[f1]")
+      println(s"[f1] state is ${counter.get()}")
+
+      counter.set(counter.get() + 1)
+      println(s"[f1] state setup to 2")
+    }
+    .map { _ =>
+      assert(counter.get() == 2, "[f1]")
+      println(s"[f1] state is ${counter.get()}")
+    }
+    .map { _ =>
+      assert(counter.get() == 2, "[f1]")
+      println(s"[f2] state is ${counter.get()}")
+    }
+
+  future
+    .map { _ =>
+      counter.set(counter.get() + 3)
+      println(s"[f2] state setup to 3")
+    }
+    .map { _ =>
+      assert(counter.get() == 3, "[f2]")
+      println(s"[f2] state is ${counter.get()}")
+
+      counter.set(counter.get() + 3)
+      println(s"[f2] state setup to 6")
+    }
+    .map { _ =>
+      assert(counter.get() == 6, "[f2]")
+      println(s"[f2] state is ${counter.get()}")
+    }
+    .map { _ =>
+      assert(counter.get() == 6, "[f2]")
+      println(s"[f2] state is ${counter.get()}")
+    }
+
+  promise.success(42)
+  Thread.sleep(100)
+
+  val counter2 = new ThreadLocal[Int]
+  val ec1 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+  val ec2 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+  val ec3 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+  val ec4 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+
+  Future
+    .successful(42)
+    .map { _ =>
+      counter2.set(counter2.get() + 1)
+      println(s"state setup to 1")
+    }(ec1)
+    .map { _ =>
+      assert(counter2.get() == 1)
+      println(s"state is ${counter2.get()}")
+
+      counter2.set(counter2.get() + 1)
+      println(s"state setup to 2")
+    }(ec2)
+    .map { _ =>
+      assert(counter2.get() == 2)
+      println(s"state is ${counter2.get()}")
+    }(ec3)
+    .map { _ =>
+      assert(counter2.get() == 2)
+      println(s"state is ${counter2.get()}")
+    }(ec4)
+
+  Thread.sleep(2_000)
 
   println("test finished")
+
+//  org.tayvs.util.Promise.fromTry()
 }

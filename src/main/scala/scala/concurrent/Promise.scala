@@ -123,7 +123,7 @@ object Promise {
    *  @tparam T       the type of the value in the promise
    *  @return         the newly created `Promise` instance
    */
-  final def apply[T](): Promise[T] = new impl.Promise.DefaultPromise[T]()
+  final def apply[T](): Promise[T] = new org.tayvs.util.Promise.DefaultPromise[T]()
 
   /** Creates an already completed Promise with the specified exception.
    *
@@ -144,5 +144,5 @@ object Promise {
    *  @tparam T       the type of the value in the promise
    *  @return         the newly created `Promise` instance
    */
-  final def fromTry[T](result: Try[T]): Promise[T] = new impl.Promise.DefaultPromise[T](result)
+  final def fromTry[T](result: Try[T]): Promise[T] = new org.tayvs.util.Promise.DefaultPromise[T](result)
 }
