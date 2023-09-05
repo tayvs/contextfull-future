@@ -226,5 +226,37 @@ class ContextfullFuture extends AsyncFunSuite with Matchers with Futures {
 //      .futureValue
   }
 
+  // TODO: Future.apply do not read the context
+  test("Future.successful should propagate ThreadLocal state though 'flatMap' with Future with delay through different executionContext") {
+    val counter2 = new ThreadLocal[Int]
+    val ec1 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+    val ec2 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+    val ec3 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+    val ec4 = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+
+    Future
+      .successful(Seq(42))
+      .flatMap { _ =>
+        counter2.set(counter2.get() + 1)
+        Future(println(s"state setup to 1"))
+      }(ec1)
+      .flatMap { _ =>
+        assert(counter2.get() == 1)
+        println(s"state is ${counter2.get()}")
+
+        counter2.set(counter2.get() + 1)
+        Future(println(s"state setup to 2"))
+      }(ec2)
+      .flatMap { _ =>
+        assert(counter2.get() == 2)
+        Future(println(s"state is ${counter2.get()}"))
+      }(ec3)
+      .flatMap { _ =>
+        Future(assert(counter2.get() == 2))
+        //        (println(s"state is ${counter2.get()}"))
+      }(ec4)
+    //      .futureValue
+  }
+
 
 }

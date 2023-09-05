@@ -627,7 +627,8 @@ object Promise {
           }
         //        ContextHolderThreadLocalHolder.ContextHolderThreadLocalHolder.remove()
 //        newCopy.clean
-        oldState.inject
+        // TODO: return old value need after task completion
+//        oldState.inject
 //        println(s"[Future.run][xform:${_xform}][${Thread.currentThread().getName}] new copy is ${newCopy}")
         if (resolvedResult ne null)
           tryComplete0(get(), resolvedResult.asInstanceOf[Try[T]], newCopy) // T is erased anyway so we won't have any use for it above
