@@ -566,6 +566,7 @@ object Promise {
       val v = _arg
       val fun = _fun
       val ec = _ec
+      val oldState = ContextHolderThreadLocalHolder.readContext
       val newCopy = _context.copy
       _fun = null // allow to GC
       _arg = null // see above
@@ -625,8 +626,9 @@ object Promise {
               ) // Safe not to `resolve`
           }
         //        ContextHolderThreadLocalHolder.ContextHolderThreadLocalHolder.remove()
-        newCopy.clean
-        println(s"[Future.run][xform:${_xform}][${Thread.currentThread().getName}] new copy is ${newCopy}")
+//        newCopy.clean
+        oldState.inject
+//        println(s"[Future.run][xform:${_xform}][${Thread.currentThread().getName}] new copy is ${newCopy}")
         if (resolvedResult ne null)
           tryComplete0(get(), resolvedResult.asInstanceOf[Try[T]], newCopy) // T is erased anyway so we won't have any use for it above
       } catch {

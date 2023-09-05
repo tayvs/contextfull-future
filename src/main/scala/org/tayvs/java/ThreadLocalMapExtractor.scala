@@ -73,7 +73,10 @@ object ThreadLocalMapExtractor /*extends App*/ {
   // TODO: reimplement copy. Right now InheritableThreadLocal used for test porpuses
   def copyThreadLocalMap(tlm: Object): Object = {
     val start = System.nanoTime()
-    if (tlm == null) tlm
+    if (tlm == null) {
+//      println(s"copyThreadLocalMap null")
+      tlm
+    }
     else {
       val entityArr = getTableThreadMapMethod.get(tlm).asInstanceOf[Array[_]]
       val notNullEntities = entityArr.filter(_ != null)
@@ -88,7 +91,7 @@ object ThreadLocalMapExtractor /*extends App*/ {
       } // else null
       //      val copy = createInheritedMapMethod.newInstance(tlm)
       val end = System.nanoTime()
-      println(s"copyThreadLocalMap that is $tlm takes ${end - start} ns")
+//      println(s"copyThreadLocalMap that is $tlm takes ${end - start} ns")
       tlmCopy
     }
   }
@@ -102,7 +105,7 @@ object ThreadLocalMapExtractor /*extends App*/ {
     threadLocalsField.set(to, tlmCopy)
     val end = System.nanoTime()
 
-    println(s"threadLocalMap reassigning takes ${end - start} ns")
+//    println(s"threadLocalMap reassigning takes ${end - start} ns")
   }
 
   def getThreadLocalMap(from: Thread): Object = copyThreadLocalMap(threadLocalsField.get(from))
@@ -177,7 +180,7 @@ object ThreadLocalMapExtractor /*extends App*/ {
     val start = System.nanoTime()
     val fRes = f
     val end = System.nanoTime()
-    println(logMsg(end - start))
+//    println(logMsg(end - start))
     fRes
   }
 //

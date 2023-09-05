@@ -17,7 +17,7 @@ class ContextHolderThreadLocalHolder(private var initContext: ThreadLocalsHolder
 
   private[util] def copy = new ContextHolderThreadLocalHolder(initContext.copy())
   private[util] def inject = initContext.injectState()
-  private[util] def clean = initContext.clean()
+//  private[util] def clean = initContext.clean()
 }
 
 object ContextHolderThreadLocalHolder {

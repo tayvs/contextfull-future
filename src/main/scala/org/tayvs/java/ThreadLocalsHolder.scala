@@ -4,7 +4,7 @@ package org.tayvs.java
 class ThreadLocalsHolder private(state: Object) {
   def injectState(): Unit = ThreadLocalMapExtractor.assignThreadLocalMap(Thread.currentThread(), state)
 
-  def clean(): Unit = ThreadLocalMapExtractor.assignThreadLocalMap(Thread.currentThread(), null)
+//  def clean(): Unit = ThreadLocalMapExtractor.assignThreadLocalMap(Thread.currentThread(), null)
 
   def copy(): ThreadLocalsHolder = new ThreadLocalsHolder(ThreadLocalMapExtractor.copyThreadLocalMap(state))
 }
