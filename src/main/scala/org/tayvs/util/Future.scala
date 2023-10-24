@@ -200,8 +200,15 @@ object Future {
    *  @param executor  the execution context on which the future is run
    *  @return          the `Future` holding the result of the computation
    */
-  final def apply[T](body: => T)(implicit executor: ExecutionContext): ClassicFuture[T] =
-    unit.map(_ => body)
+  final def apply[T](body: => T)(implicit executor: ExecutionContext): ClassicFuture[T] = {
+    // CAn not inject new context into exists Future But can create new future with context that should be propagated further
+    val unit = fromTry(Success(()))
+//    val context = ContextHolderThreadLocalHolder()
+    unit.map { _ =>
+//      context.inject
+      body
+    }
+  }
 
 
 }
