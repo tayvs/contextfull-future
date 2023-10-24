@@ -1,0 +1,6 @@
+-J-Xms1024M
+-J-Xmx2048M
+-J-Xss2M
+-J-XX:MaxMetaspaceSize=1024M
+-J--add-opens=java.base/java.util=ALL-UNNAMED
+-J--add-opens=java.base/java.lang=ALL-UNNAMED
