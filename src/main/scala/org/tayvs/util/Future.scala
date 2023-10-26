@@ -210,5 +210,32 @@ object Future {
     }
   }
 
+  /** Starts an asynchronous computation and returns a `Future` instance with the result of that computation once it completes.
+   *
+   * The following expressions are semantically equivalent:
+   *
+   * {{{
+   *  val f1 = Future(expr).flatten
+   *  val f2 = Future.delegate(expr)
+   *  val f3 = Future.unit.flatMap(_ => expr)
+   *   }}}
+   *
+   *  The result becomes available once the resulting Future of the asynchronous computation is completed.
+   *
+   *  @tparam T        the type of the result
+   *  @param body      the asynchronous computation, returning a Future
+   *  @param executor  the execution context on which the `body` is evaluated in
+   *  @return          the `Future` holding the result of the computation
+   */
+  final def delegate[T](body: => ClassicFuture[T])(implicit executor: ExecutionContext): ClassicFuture[T] = {
+    // CAn not inject new context into exists Future But can create new future with context that should be propagated further
+    val unit = fromTry(Success(()))
+    //    val context = ContextHolderThreadLocalHolder()
+    unit.flatMap { _ =>
+      //      context.inject
+      body
+    }
+  }
+
 
 }

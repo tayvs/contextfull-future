@@ -10,7 +10,7 @@ object Boot extends App {
 
   def assert(b: Boolean, msg: String = "") = {
     if (!b) {
-      println(s"assertion failed, ${msg}")
+      System.err.println(s"!!!! assertion failed, $msg")
       throw new Exception("Assertion failed")
     }
   }

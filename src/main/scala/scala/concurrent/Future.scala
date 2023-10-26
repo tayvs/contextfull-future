@@ -672,7 +672,7 @@ object Future {
    *  @return          the `Future` holding the result of the computation
    */
   final def apply[T](body: => T)(implicit executor: ExecutionContext): Future[T] =
-    unit.map(_ => body)
+    org.tayvs.util.Future.apply(body)
 
   /** Starts an asynchronous computation and returns a `Future` instance with the result of that computation once it completes.
    *
@@ -692,7 +692,7 @@ object Future {
    *  @return          the `Future` holding the result of the computation
    */
   final def delegate[T](body: => Future[T])(implicit executor: ExecutionContext): Future[T] =
-    unit.flatMap(_ => body)
+    org.tayvs.util.Future.delegate(body)
 
   /** Simple version of `Future.traverse`. Asynchronously and non-blockingly transforms, in essence, a `IterableOnce[Future[A]]`
    *  into a `Future[IterableOnce[A]]`. Useful for reducing many `Future`s into a single `Future`.
