@@ -1,1 +1,1 @@
-sbt future/publishLocal test/assembly
+sbt futureOverride/publishLocal test/assembly
