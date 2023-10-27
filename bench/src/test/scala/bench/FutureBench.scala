@@ -1,11 +1,12 @@
 package bench
 
-import org.openjdk.jmh.annotations.{Benchmark, Level, Param, Scope, Setup, State, TearDown}
+//import bench.FutureBench.FutureInitValue
+import org.openjdk.jmh.annotations._
 import org.tayvs.util.{Future => MyFuture}
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future => SFuture}
-import scala.util.{Success, Try}
+import scala.concurrent.{ExecutionContext, Future => SFuture}
+import scala.util.{Random, Success, Try}
 
 @State(Scope.Benchmark)
 class FutureBench {
@@ -15,7 +16,8 @@ class FutureBench {
 
   var executor: ExecutionContext = _
 
-  @Setup(Level.Trial)
+  private var initValue = 42
+  @Setup
   def startup(): Unit = {
     executor = pool match {
       case "singleThread" => ExecutionContext.fromExecutorService(java.util.concurrent.Executors.newSingleThreadExecutor())
@@ -34,16 +36,16 @@ class FutureBench {
   }
 
   @Benchmark
-  def sFuture_successful(): Unit = await(SFuture.successful(12))
+  def sFuture_successful(/*init: FutureInitValue*/): Boolean = await(SFuture.successful(initValue))
 
   @Benchmark
-  def myFuture_successful(): Unit = await(MyFuture.successful(12))
+  def myFuture_successful(/*init: FutureInitValue*/): Boolean = await(MyFuture.successful(initValue))
 
   @Benchmark
-  def sFuture_successful_map(): Unit = await(SFuture.successful(12).map(_ + 1)(executor))
+  def sFuture_successful_map(/*init: FutureInitValue*/): Boolean = await(SFuture.successful(initValue).map(_ + 1)(executor))
 
   @Benchmark
-  def myFuture_successful_map(): Unit = await(MyFuture.successful(12).map(_ + 1)(executor))
+  def myFuture_successful_map(/*init: FutureInitValue*/): Boolean = await(MyFuture.successful(initValue).map(_ + 1)(executor))
 
 
   final def await[T](a: SFuture[T]): Boolean = {
@@ -53,4 +55,11 @@ class FutureBench {
     } while (r eq None);
     r.get.isInstanceOf[Success[T]]
   }
+}
+
+object FutureBench {
+//  @State(Scope.Benchmark)
+//  class FutureInitValue {
+//    var value: Int = Random.nextInt(100_000)
+//  }
 }
